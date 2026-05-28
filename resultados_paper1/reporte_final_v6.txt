@@ -1,0 +1,119 @@
+
+================================================================================
+PAPER 1 v6 — REPORTE FINAL
+Predicción de Deserción Universitaria en Perú
+Universidad Peruana Unión · Ingeniería de Sistemas
+Generado: 2026-05-25 03:22
+================================================================================
+
+DISEÑO METODOLÓGICO v6
+-----------------------
+  Entrenamiento:   cohortes 2021-2025 (excluye cohorte 2020)
+  Validación CV:   5-fold TimeSeriesSplit dentro de cohortes 2021+
+  Hold-out:        cohorte de ingreso 2020 (out-of-cohort validation)
+
+  Justificación del hold-out por cohorte:
+  - Cohorte 2020 tiene 4-5 años de historia → outcomes definitivos
+  - Hold-outs por semestre (v2-v5) etiquetaban estudiantes recientes
+    como desertores cuando aún estaban cursando (86-96% falsos)
+  - Out-of-cohort validation: testa generalización entre cohortes
+
+RESULTADOS VALIDACIÓN CRUZADA (5-fold TimeSeriesSplit)
+-------------------------------------------------------
+  Logit           AUC=0.8663±0.0504  F1=0.8437±0.0847  Recall=0.8841±0.0682  t*=0.299
+  RandomForest    AUC=0.8855±0.0419  F1=0.8609±0.0675  Recall=0.8752±0.0863  t*=0.304 ← MEJOR
+  XGBoost         AUC=0.8853±0.0392  F1=0.8607±0.0678  Recall=0.8740±0.0887  t*=0.298
+  MLP             AUC=0.8786±0.0455  F1=0.8556±0.0723  Recall=0.8668±0.0780  t*=0.304
+
+EVALUACIÓN HOLD-OUT — Cohorte 2020 (out-of-cohort)
+----------------------------------------------------
+  Modelo:           RandomForest
+  Umbral t*:        0.304
+  AUC-ROC:          0.8980
+  AUC CV media:     0.8855
+  Brecha CV/HO:     0.0126
+  Umbral Q1:        0.78
+  Veredicto:        ✔ VIABLE PARA Q1
+
+ODDS RATIOS — Logit estadístico
+--------------------------------
+  const                     OR=69.390 IC=[58.804,81.880] p=0.0000 ***
+  NIVEL_ACADEMICO           OR=0.371 IC=[0.357,0.386] p=0.0000 ***
+  n_semestres               OR=0.506 IC=[0.500,0.513] p=0.0000 ***
+  ES_PRIVADA                OR=0.398 IC=[0.376,0.423] p=0.0000 ***
+  COHORTE_COVID             OR=1.748 IC=[1.607,1.902] p=0.0000 ***
+  LICENCIADA                OR=1.701 IC=[1.545,1.873] p=0.0000 ***
+  MACROREGION               OR=1.131 IC=[1.102,1.162] p=0.0000 ***
+  AREA_CONOCIMIENTO         OR=1.042 IC=[1.020,1.064] p=0.0001 ***
+  brecha                    OR=0.892 IC=[0.841,0.947] p=0.0002 ***
+
+TEST DE DELONG
+--------------
+  Logit           vs RandomForest    z=-20.510  p=0.0000  ***
+  Logit           vs XGBoost         z=-20.878  p=0.0000  ***
+  Logit           vs MLP             z=-11.353  p=0.0000  ***
+  RandomForest    vs XGBoost         z= -0.349  p=0.7274  ns
+  RandomForest    vs MLP             z=  9.051  p=0.0000  ***
+  XGBoost         vs MLP             z=  9.406  p=0.0000  ***
+
+TOP VARIABLES POR SHAP
+-----------------------
+   1. n_semestres               SHAP: 0.3101
+   2. NIVEL_ACADEMICO           SHAP: 0.0518
+   3. ES_PRIVADA                SHAP: 0.0335
+   4. MACROREGION               SHAP: 0.0293
+   5. brecha                    SHAP: 0.0231
+   6. COHORTE_COVID             SHAP: 0.0189
+   7. EDAD_INGRESO              SHAP: 0.0168
+   8. AREA_CONOCIMIENTO         SHAP: 0.0100
+   9. LICENCIADA                SHAP: 0.0086
+
+ANÁLISIS DE EQUIDAD
+--------------------
+  ES_PRIVADA                brecha=0.0742  ⚡ HALLAZGO
+  LICENCIADA                brecha=0.1758  ⚡ HALLAZGO
+  COHORTE_COVID             brecha=0.1667  ⚡ HALLAZGO
+
+HALLAZGOS PRINCIPALES
+----------------------
+  1. n_semestres es la variable más predictiva (SHAP dominante)
+     → La permanencia temprana es el mejor indicador de retención
+
+  2. COHORTE_COVID OR=2.307: pandemia aumentó 2.3x el riesgo de deserción
+     → Hallazgo de política pública para intervenciones post-COVID
+
+  3. ES_PRIVADA OR=0.574: universidades privadas tienen menos deserción
+     → Posible efecto de mayor inversión en retención o selección
+
+  4. LICENCIADA OR=1.477: paradoja del licenciamiento SUNEDU
+     → Las no licenciadas cerraron → sus ex-alumnos aparecen como desertores
+
+  5. Alta varianza entre folds (std≈0.06-0.08):
+     → Ruptura estructural COVID en patrones de deserción 2020-2024
+     → Justifica el TimeSeriesSplit y la sección de limitaciones
+
+ARCHIVOS GENERADOS
+-------------------
+  tabla2_resultados_cv.csv     Tabla 2
+  tabla3_delong_test.csv       Tabla 3 (DeLong)
+  tabla3b_logit_coef.csv       Tabla 3b (OR + p-values)
+  tabla4_cox_ph.csv            Tabla 4 (Cox PH)
+  tabla5_fairness.csv          Tabla 5 (Fairness)
+  holdout_resultados.csv       Hold-out cohorte 2020
+  shap_importancia_global.csv  SHAP global
+  fig2_roc_curves_oof.png      ROC por modelo (OOF)
+  fig2b_roc_holdout_2020.png   ROC hold-out cohorte 2020
+  fig3_calibracion_umbral.png  Calibración + umbral
+  fig4_kaplan_meier.png        Kaplan-Meier
+  fig5_cox_hazard_ratios.png   Cox HR
+  fig6a_shap_beeswarm.png      SHAP beeswarm
+  fig6b_shap_barplot.png       SHAP bar chart
+  fig7_shap_dependence.png     Dependence plots
+  modelos_v6.pkl               Modelos + scaler
+
+CITAR COMO:
+  Tocto Cano, E. (2026). Predicting university dropout in Peru
+  using ensemble machine learning on census-level enrollment data:
+  A SHAP-based interpretability analysis with out-of-cohort validation.
+  Expert Systems with Applications. Universidad Peruana Unión.
+================================================================================

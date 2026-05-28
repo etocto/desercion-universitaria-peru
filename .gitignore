@@ -1,0 +1,17 @@
+# Datos crudos (muy grandes para GitHub)
+matriculado_*.csv
+egresado_*.csv
+
+# Modelos pkl (muy pesados)
+resultados_paper1/modelos_*.pkl
+resultados_paper1/holdout_predictions.pkl
+resultados_paper1/shap_data.pkl
+resultados_paper1/survival_data.pkl
+
+# Sistema
+.DS_Store
+resultados_paper1/.DS_Store
+resultados_paper1/figures_en/.DS_Store
+__pycache__/
+venv/
+*.pyc
